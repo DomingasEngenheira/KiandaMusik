@@ -41,7 +41,7 @@ public class PricipalActivity extends Base2Activity {
         track.setTrackCover(R.drawable.big_shaq_track);
         //track.setTrackId(0);
 
-        Album bigOne1 = new Album(1,"Big One",artist.getId(),"20-11-16","500");
+        /*Album bigOne1 = new Album(1,"Big One",artist.getId(),"20-11-16","500");
         Track track1 = new Track();
         track1.setAlbum(bigOne);
         track1.setArtist(artist);
@@ -54,11 +54,10 @@ public class PricipalActivity extends Base2Activity {
         track3.setArtist(artist);
         track3.setTrackCover(R.drawable.big_shaq_track);
         //track.setTrackId(0);
-
+*/
         ArrayList<Track> tracks = new ArrayList<>();
         tracks.add(track);
-        tracks.add(track1);
-        tracks.add(track3);
+
 
         PopularTrackList popularTrackList = new PopularTrackList(0, artist.getId(), tracks);
         popularTrackList.setPopularTracks(tracks);
