@@ -12,9 +12,15 @@ import android.widget.TextView;
 
 import com.example.domingas.kiandamuzik.R;
 import com.example.domingas.kiandamuzik.TelaArtistaDetalhada;
+import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
+import api.Client;
+import api.Models.PopularTracks;
 import models.Artista;
 import models.PopularTrackList;
+import models.Track;
 
 /**
  * Created by DOMINGAS on 21/12/2017.
@@ -22,12 +28,12 @@ import models.PopularTrackList;
 
     public class PopularTracksAdapter extends RecyclerView.Adapter<PopularTracksAdapter.ViewHolder> {
 
-        private PopularTrackList mPopularList;
+        private List<PopularTracks> mTrack;
         private Context context;
 
-        public PopularTracksAdapter (Context context, PopularTrackList mPopularList) {
+        public PopularTracksAdapter (Context context, List<PopularTracks> Track) {
             this.context = context;
-            this.mPopularList = mPopularList;
+            this.mTrack = Track;
 
         }
 
@@ -65,17 +71,25 @@ import models.PopularTrackList;
 
         @Override
         public void onBindViewHolder(ViewHolder holder, int position) {
-            holder.ArtistName.setText(mPopularList.getPopularTracks().get(position).getArtist().getName());
-            holder.TrackName.setText(mPopularList.getPopularTracks().get(position).getaName());
-            holder.trackCover.setImageResource(mPopularList.getPopularTracks().get(position).getTrackCover());
+
+            holder.ArtistName.setText(mTrack.get(position).getArtist().get(0).getName());
+           holder.TrackName.setText(mTrack.get(position).getTrackTitle());
+           Picasso.with(context).load(mTrack.get(position).getTrackCoverArt()).resize(512, 512).into(holder.trackCover);
+          // holder.trackCover.setImageResource(mTrack.getArtist().get(position).getTrackCover());
+
+
+
+            //holder.trackCover.setImageResource(mTrack.getArtist().get(position).getTrackCover());
+
             //Codigo para pegar o nome do artista
             Bundle musicData = new Bundle();
-            musicData.putString(PopularTrackConstants.ARTIST_TITLE, mPopularList.getPopularTracks().get(position).getArtist().getName());
+            musicData.putString(PopularTrackConstants.ARTIST_TITLE, mTrack.get(position).getArtist().get(0).getName());
             //Titulo da musica
-            musicData.putString(PopularTrackConstants.TRACK_TITLE, mPopularList.getPopularTracks().get(position).getaName());
+            musicData.putString(PopularTrackConstants.TRACK_TITLE, mTrack.get(position).getTrackTitle());
             // capa da musica
-            musicData.putInt(PopularTrackConstants.TRACK_COVER, mPopularList.getPopularTracks().get(position).getTrackCover());
-            musicData.putString(PopularTrackConstants.ARTIST_DESCRIPTION, mPopularList.getPopularTracks().get(position).getArtist().getDescription());
+
+            musicData.putString(PopularTrackConstants.TRACK_COVER, mTrack.get(position).getTrackCoverArt());
+            musicData.putString(PopularTrackConstants.ARTIST_DESCRIPTION, mTrack.get(position).getArtist().get(0).getDescription());
 
             final Intent intent = new Intent(context, TelaArtistaDetalhada.class);
             intent.putExtras(musicData);
@@ -103,7 +117,7 @@ import models.PopularTrackList;
         @Override
         public int getItemCount() {//serve para conter a lista de itens. é implementado pelo lyoutManeger
 
-                return mPopularList.getPopularTracks().size();
+                return mTrack.size();
         }
 
 

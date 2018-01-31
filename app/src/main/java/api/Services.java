@@ -12,13 +12,14 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 
 public class Services {
-    public static final String BASE_URL = "https://kianda-simple-tracks-api.herokuapp.com/";
+    private static String BASE_URL1 = "https://192.168.0.110:3000/";
+    private static String BASE_URL = "https://kianda-simple-tracks-api.herokuapp.com/";
     private static Retrofit.Builder builder = new Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create());
     private static  final Retrofit retrofit = builder.build();
 
-    public static <S> S createService(Class<S> service) {
-        return retrofit.create(service);
+    public static  <S> S createService(Class<S> sClass){
+        return retrofit.create(sClass);
     }
 }

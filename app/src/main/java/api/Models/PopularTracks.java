@@ -1,12 +1,15 @@
 package api.Models;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
 import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 import api.Models.ArtistItem;
 
 
-public class Track {
+public class PopularTracks implements Parcelable{
 
 	@SerializedName("trackCoverArt")
 	private String trackCoverArt;
@@ -22,6 +25,25 @@ public class Track {
 
 	@SerializedName("views")
 	private int views;
+
+	protected PopularTracks(Parcel in) {
+		trackCoverArt = in.readString();
+		trackUrl = in.readString();
+		trackTitle = in.readString();
+		views = in.readInt();
+	}
+
+	public static final Creator<PopularTracks> CREATOR = new Creator<PopularTracks>() {
+		@Override
+		public PopularTracks createFromParcel(Parcel in) {
+			return new PopularTracks(in);
+		}
+
+		@Override
+		public PopularTracks[] newArray(int size) {
+			return new PopularTracks[size];
+		}
+	};
 
 	public void setTrackCoverArt(String trackCoverArt){
 		this.trackCoverArt = trackCoverArt;
@@ -66,7 +88,7 @@ public class Track {
 	@Override
  	public String toString(){
 		return 
-			"Track{" +
+			"PopularTracks{" +
 			"trackCoverArt = '" + trackCoverArt + '\'' + 
 			",artist = '" + artist + '\'' + 
 			",trackUrl = '" + trackUrl + '\'' + 
@@ -74,4 +96,17 @@ public class Track {
 			",views = '" + views + '\'' + 
 			"}";
 		}
+
+	@Override
+	public int describeContents() {
+		return 0;
+	}
+
+	@Override
+	public void writeToParcel(Parcel parcel, int i) {
+		parcel.writeString(trackCoverArt);
+		parcel.writeString(trackUrl);
+		parcel.writeString(trackTitle);
+		parcel.writeInt(views);
+	}
 }
