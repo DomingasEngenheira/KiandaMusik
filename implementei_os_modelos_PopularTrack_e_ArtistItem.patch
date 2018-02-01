@@ -1,0 +1,774 @@
+Index: app/src/main/java/com/example/domingas/kiandamuzik/bottom_now_playing_card.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/domingas/kiandamuzik/bottom_now_playing_card.java	(revision )
++++ app/src/main/java/com/example/domingas/kiandamuzik/bottom_now_playing_card.java	(revision )
+@@ -0,0 +1,13 @@
++package com.example.domingas.kiandamuzik;
++
++import android.os.Bundle;
++import android.support.v7.app.AppCompatActivity;
++
++public class bottom_now_playing_card extends AppCompatActivity {
++
++    @Override
++    protected void onCreate(Bundle savedInstanceState) {
++        super.onCreate(savedInstanceState);
++        setContentView(R.layout.activity_now_playing);
++    }
++}
+Index: app/src/main/java/adapters/PopularTracksAdapter.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/adapters/PopularTracksAdapter.java	(date 1517236364000)
++++ app/src/main/java/adapters/PopularTracksAdapter.java	(revision )
+@@ -12,9 +12,15 @@
+ 
+ import com.example.domingas.kiandamuzik.R;
+ import com.example.domingas.kiandamuzik.TelaArtistaDetalhada;
++import com.squareup.picasso.Picasso;
+ 
++import java.util.List;
++
++import api.Client;
++import api.Models.PopularTracks;
+ import models.Artista;
+ import models.PopularTrackList;
++import models.Track;
+ 
+ /**
+  * Created by DOMINGAS on 21/12/2017.
+@@ -22,12 +28,12 @@
+ 
+     public class PopularTracksAdapter extends RecyclerView.Adapter<PopularTracksAdapter.ViewHolder> {
+ 
+-        private PopularTrackList mPopularList;
++        private List<PopularTracks> mTrack;
+         private Context context;
+ 
+-        public PopularTracksAdapter (Context context, PopularTrackList mPopularList) {
++        public PopularTracksAdapter (Context context, List<PopularTracks> Track) {
+             this.context = context;
+-            this.mPopularList = mPopularList;
++            this.mTrack = Track;
+ 
+         }
+ 
+@@ -65,17 +71,25 @@
+ 
+         @Override
+         public void onBindViewHolder(ViewHolder holder, int position) {
+-            holder.ArtistName.setText(mPopularList.getPopularTracks().get(position).getArtist().getName());
+-            holder.TrackName.setText(mPopularList.getPopularTracks().get(position).getaName());
+-            holder.trackCover.setImageResource(mPopularList.getPopularTracks().get(position).getTrackCover());
++
++            holder.ArtistName.setText(mTrack.get(position).getArtist().get(0).getName());
++           holder.TrackName.setText(mTrack.get(position).getTrackTitle());
++           Picasso.with(context).load(mTrack.get(position).getTrackCoverArt()).resize(512, 512).into(holder.trackCover);
++          // holder.trackCover.setImageResource(mTrack.getArtist().get(position).getTrackCover());
++
++
++
++            //holder.trackCover.setImageResource(mTrack.getArtist().get(position).getTrackCover());
++
+             //Codigo para pegar o nome do artista
+             Bundle musicData = new Bundle();
+-            musicData.putString(PopularTrackConstants.ARTIST_TITLE, mPopularList.getPopularTracks().get(position).getArtist().getName());
++            musicData.putString(PopularTrackConstants.ARTIST_TITLE, mTrack.get(position).getArtist().get(0).getName());
+             //Titulo da musica
+-            musicData.putString(PopularTrackConstants.TRACK_TITLE, mPopularList.getPopularTracks().get(position).getaName());
++            musicData.putString(PopularTrackConstants.TRACK_TITLE, mTrack.get(position).getTrackTitle());
+             // capa da musica
+-            musicData.putInt(PopularTrackConstants.TRACK_COVER, mPopularList.getPopularTracks().get(position).getTrackCover());
+-            musicData.putString(PopularTrackConstants.ARTIST_DESCRIPTION, mPopularList.getPopularTracks().get(position).getArtist().getDescription());
++
++            musicData.putString(PopularTrackConstants.TRACK_COVER, mTrack.get(position).getTrackCoverArt());
++            musicData.putString(PopularTrackConstants.ARTIST_DESCRIPTION, mTrack.get(position).getArtist().get(0).getDescription());
+ 
+             final Intent intent = new Intent(context, TelaArtistaDetalhada.class);
+             intent.putExtras(musicData);
+@@ -103,7 +117,7 @@
+         @Override
+         public int getItemCount() {//serve para conter a lista de itens. é implementado pelo lyoutManeger
+ 
+-                return mPopularList.getPopularTracks().size();
++                return mTrack.size();
+         }
+ 
+ 
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(date 1517236364000)
++++ app/src/main/AndroidManifest.xml	(revision )
+@@ -2,6 +2,9 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+     package="com.example.domingas.kiandamuzik">
+ 
++    <uses-permission android:name="android.permission.WAKE_LOCK"> </uses-permission>
++    <uses-permission android:name="android.permission.INTERNET">  </uses-permission>
++
+     <application
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+Index: app/src/main/java/com/example/domingas/kiandamuzik/NowPlayingActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/domingas/kiandamuzik/NowPlayingActivity.java	(date 1517236364000)
++++ app/src/main/java/com/example/domingas/kiandamuzik/NowPlayingActivity.java	(revision )
+@@ -1,14 +1,57 @@
+ package com.example.domingas.kiandamuzik;
+ 
++import android.content.Context;
+ import android.media.Image;
++import android.media.MediaPlayer;
++import android.support.annotation.Nullable;
+ import android.support.v7.app.AppCompatActivity;
+ import android.os.Bundle;
++import android.view.LayoutInflater;
++import android.view.View;
++import android.view.ViewGroup;
++import android.widget.ImageView;
++import android.widget.ProgressBar;
++import android.widget.TextView;
+ 
+-public class NowPlayingActivity extends AppCompatActivity {
++import com.example.domingas.kiandamuzik.custom_views.PlayPauseButton;
++import com.squareup.picasso.Picasso;
+ 
++import java.util.ArrayList;
++
++import api.Models.PopularTracks;
++
++public class NowPlayingActivity extends android.support.v4.app.Fragment{
++    ImageView albumArt;
++    ProgressBar progressBar;
++    TextView mSongTitle;
++    TextView mArtistTitle;
++    PlayPauseButton play;
++    Bundle songInfo;
++    MediaPlayer mediaPlayer;
++    Boolean tocando = false;
++    ArrayList<PopularTracks> tracks;
++
++    Context context;
++    @Nullable
+     @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_now_playing);
++    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
++        View v = inflater.inflate(R.layout.activity_now_playing, container, false);
++
++        albumArt = v.findViewById(R.id.capa);
++        progressBar = v.findViewById(R.id.progressBar2);
++        play = v.findViewById(R.id.principleTrackPaly);
++        mSongTitle = v.findViewById(R.id.controls_song_title);
++        mArtistTitle = v.findViewById(R.id.principleTrackTitle);
++
++        mSongTitle.setText(tracks.get(0).getTrackTitle());
++        mArtistTitle.setText(tracks.get(0).getTrackTitle());
++        Picasso.with(this.getContext()).load(tracks.get(0).getTrackCoverArt()).resize(512, 512).into(albumArt);
++
++
++        return v;
+     }
++
++
++
+ }
++
+Index: app/build.gradle
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/build.gradle	(date 1517236364000)
++++ app/build.gradle	(revision )
+@@ -30,4 +30,6 @@
+     implementation 'com.android.support:recyclerview-v7:26.0.0-beta1'
+     compile 'com.squareup.retrofit2:retrofit:2.3.0'
+     compile 'com.squareup.retrofit2:converter-gson:2.3.0'
++
++    compile 'com.squareup.picasso:picasso:2.5.2'
+ }
+Index: app/src/main/java/com/example/domingas/kiandamuzik/Base2Activity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/domingas/kiandamuzik/Base2Activity.java	(date 1517236364000)
++++ app/src/main/java/com/example/domingas/kiandamuzik/Base2Activity.java	(revision )
+@@ -7,10 +7,10 @@
+ import Fragments.NowPlayingCard;
+ 
+ public class Base2Activity extends AppCompatActivity {
+-    public class initNowPlayingControls extends AsyncTask<String, Void, String> {
++    public class initNowPlayingControls extends AsyncTask<Bundle, Void, String> {
+ 
+         @Override
+-        protected String doInBackground(String... strings) {
++        protected String doInBackground(Bundle... bundles) {
+             NowPlayingCard nowplaying = new NowPlayingCard();
+             android.support.v4.app.FragmentManager fragmentManager = getSupportFragmentManager();
+             fragmentManager.beginTransaction().replace(R.id.quick_controls_container, nowplaying).commitAllowingStateLoss();
+Index: app/src/main/java/api/Models/Track.java
+===================================================================
+--- app/src/main/java/api/Models/Track.java	(date 1517236364000)
++++ app/src/main/java/api/Models/PopularTracks.java	(revision )
+@@ -1,12 +1,15 @@
+ package api.Models;
+ 
++import android.os.Parcel;
++import android.os.Parcelable;
++
+ import java.util.List;
+ import com.google.gson.annotations.SerializedName;
+ 
+ import api.Models.ArtistItem;
+ 
+ 
+-public class Track {
++public class PopularTracks implements Parcelable{
+ 
+ 	@SerializedName("trackCoverArt")
+ 	private String trackCoverArt;
+@@ -23,6 +26,25 @@
+ 	@SerializedName("views")
+ 	private int views;
+ 
++	protected PopularTracks(Parcel in) {
++		trackCoverArt = in.readString();
++		trackUrl = in.readString();
++		trackTitle = in.readString();
++		views = in.readInt();
++	}
++
++	public static final Creator<PopularTracks> CREATOR = new Creator<PopularTracks>() {
++		@Override
++		public PopularTracks createFromParcel(Parcel in) {
++			return new PopularTracks(in);
++		}
++
++		@Override
++		public PopularTracks[] newArray(int size) {
++			return new PopularTracks[size];
++		}
++	};
++
+ 	public void setTrackCoverArt(String trackCoverArt){
+ 		this.trackCoverArt = trackCoverArt;
+ 	}
+@@ -66,7 +88,7 @@
+ 	@Override
+  	public String toString(){
+ 		return 
+-			"Track{" +
++			"PopularTracks{" +
+ 			"trackCoverArt = '" + trackCoverArt + '\'' + 
+ 			",artist = '" + artist + '\'' + 
+ 			",trackUrl = '" + trackUrl + '\'' + 
+@@ -74,4 +96,17 @@
+ 			",views = '" + views + '\'' + 
+ 			"}";
+ 		}
++
++	@Override
++	public int describeContents() {
++		return 0;
++	}
++
++	@Override
++	public void writeToParcel(Parcel parcel, int i) {
++		parcel.writeString(trackCoverArt);
++		parcel.writeString(trackUrl);
++		parcel.writeString(trackTitle);
++		parcel.writeInt(views);
++	}
+ }
+\ No newline at end of file
+Index: app/src/main/res/layout/activity_pricipal.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/res/layout/activity_pricipal.xml	(date 1517236364000)
++++ app/src/main/res/layout/activity_pricipal.xml	(revision )
+@@ -6,7 +6,23 @@
+     xmlns:android="http://schemas.android.com/apk/res/android" >
+ 
+ 
++    <ProgressBar
++        android:id="@+id/progressBar2"
++        style="?android:attr/progressBarStyle"
++        android:layout_width="wrap_content"
++        android:layout_height="wrap_content"
++
++        android:layout_marginTop="344dp"
++        android:max="50"
++        app:layout_constraintEnd_toEndOf="parent"
++        app:layout_constraintHorizontal_bias="0.498"
++        app:layout_constraintLeft_toLeftOf="parent"
++        app:layout_constraintRight_toRightOf="parent"
++        app:layout_constraintStart_toStartOf="parent"
++        app:layout_constraintTop_toTopOf="parent" />
++
+     <android.support.v4.widget.NestedScrollView
++        android:id="@+id/scroll"
+         android:layout_width="match_parent"
+         android:layout_height="match_parent"
+         app:layout_constraintBottom_toBottomOf="parent"
+@@ -15,114 +31,114 @@
+         app:layout_constraintTop_toTopOf="parent">
+ 
+ 
+-            <android.support.constraint.ConstraintLayout
+-                android:layout_width="match_parent"
+-                android:layout_height="wrap_content"
+-                android:alpha="30"
+-                android:background="@color/colorText"
+-                tools:context="com.example.domingas.kiandamuzik.PricipalActivity">
++        <android.support.constraint.ConstraintLayout
++            android:layout_width="match_parent"
++            android:layout_height="wrap_content"
++            android:alpha="30"
++            android:background="@color/colorText"
++            tools:context="com.example.domingas.kiandamuzik.PricipalActivity">
+ 
+-                <ImageView
+-                    android:id="@+id/imageView"
+-                    android:layout_width="0dp"
+-                    android:layout_height="wrap_content"
+-                    android:adjustViewBounds="true"
+-                    android:cropToPadding="false"
+-                    app:layout_constraintEnd_toEndOf="parent"
+-                    app:layout_constraintHorizontal_bias="0.0"
+-                    app:layout_constraintStart_toStartOf="parent"
+-                    app:layout_constraintTop_toTopOf="parent"
+-                    app:srcCompat="@drawable/neru" />
++            <ImageView
++                android:id="@+id/capa"
++                android:layout_width="0dp"
++                android:layout_height="wrap_content"
++                android:adjustViewBounds="true"
++                android:cropToPadding="false"
++                app:layout_constraintEnd_toEndOf="parent"
++                app:layout_constraintHorizontal_bias="0.0"
++                app:layout_constraintStart_toStartOf="parent"
++                app:layout_constraintTop_toTopOf="parent"
++                app:srcCompat="@drawable/neru" />
+ 
+-                <android.support.constraint.ConstraintLayout
+-                    android:id="@+id/constraintLayout"
+-                    android:layout_width="413dp"
+-                    android:layout_height="77dp"
+-                    android:alpha="0.8"
+-                    android:background="@color/colorBlack"
+-                    app:layout_constraintBottom_toBottomOf="@+id/imageView"
+-                    app:layout_constraintEnd_toEndOf="parent"
+-                    app:layout_constraintHorizontal_bias="1.0"
+-                    app:layout_constraintStart_toStartOf="parent">
++            <android.support.constraint.ConstraintLayout
++                android:id="@+id/constraintLayout"
++                android:layout_width="413dp"
++                android:layout_height="77dp"
++                android:alpha="0.8"
++                android:background="@color/colorBlack"
++                app:layout_constraintBottom_toBottomOf="@+id/capa"
++                app:layout_constraintEnd_toEndOf="parent"
++                app:layout_constraintHorizontal_bias="1.0"
++                app:layout_constraintStart_toStartOf="parent">
+ 
+-                    <TextView
+-                        android:id="@+id/principleArtistName"
+-                        android:layout_width="wrap_content"
+-                        android:layout_height="wrap_content"
+-                        android:layout_marginStart="44dp"
+-                        android:layout_marginTop="8dp"
+-                        android:fontFamily="@font/montserrat_bold"
+-                        android:text="@string/neru"
+-                        android:textColor="@color/colorText"
+-                        android:textSize="18sp"
+-                        android:textStyle="bold"
+-                        app:layout_constraintStart_toStartOf="parent"
+-                        app:layout_constraintTop_toTopOf="parent"
+-                        tools:text="@string/neru" />
++                <TextView
++                    android:id="@+id/principleArtistName"
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:layout_marginStart="44dp"
++                    android:layout_marginTop="8dp"
++                    android:fontFamily="@font/montserrat_bold"
++                    android:text="@string/neru"
++                    android:textColor="@color/colorText"
++                    android:textSize="18sp"
++                    android:textStyle="bold"
++                    app:layout_constraintStart_toStartOf="parent"
++                    app:layout_constraintTop_toTopOf="parent"
++                    tools:text="@string/neru" />
+ 
+-                    <TextView
+-                        android:id="@+id/principleTrackTitle"
+-                        android:layout_width="wrap_content"
+-                        android:layout_height="wrap_content"
+-                        android:layout_marginStart="44dp"
+-                        android:layout_marginTop="4dp"
+-                        android:text="Selfie"
+-                        android:textColor="@color/colorText"
+-                        app:layout_constraintStart_toStartOf="parent"
+-                        app:layout_constraintTop_toBottomOf="@+id/principleArtistName"
+-                        tools:text="Selfie" />
++                <TextView
++                    android:id="@+id/principleTrackTitle"
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:layout_marginStart="44dp"
++                    android:layout_marginTop="4dp"
++                    android:text="Selfie"
++                    android:textColor="@color/colorText"
++                    app:layout_constraintStart_toStartOf="parent"
++                    app:layout_constraintTop_toBottomOf="@+id/principleArtistName"
++                    tools:text="Selfie" />
+ 
+-                    <ImageButton
+-                        android:id="@+id/principleTrackPaly"
+-                        android:layout_width="wrap_content"
+-                        android:layout_height="wrap_content"
+-                        android:layout_marginEnd="32dp"
+-                        android:adjustViewBounds="true"
+-                        android:alpha="0.8"
+-                        android:background="@android:color/transparent"
+-                        app:layout_constraintBottom_toBottomOf="parent"
+-                        app:layout_constraintEnd_toEndOf="parent"
+-                        app:layout_constraintTop_toTopOf="parent"
+-                        app:layout_constraintVertical_bias="0.344"
+-                        app:srcCompat="@drawable/ic_play_circle_outline_24dp" />
+-                </android.support.constraint.ConstraintLayout>
++                <ImageButton
++                    android:id="@+id/play"
++                    android:layout_width="wrap_content"
++                    android:layout_height="wrap_content"
++                    android:layout_marginEnd="32dp"
++                    android:adjustViewBounds="true"
++                    android:alpha="0.8"
++                    android:background="@android:color/transparent"
++                    app:layout_constraintBottom_toBottomOf="parent"
++                    app:layout_constraintEnd_toEndOf="parent"
++                    app:layout_constraintTop_toTopOf="parent"
++                    app:layout_constraintVertical_bias="0.344"
++                    app:srcCompat="@drawable/ic_play_circle_outline_24dp" />
++            </android.support.constraint.ConstraintLayout>
+ 
+-                <TextView
+-                    android:id="@+id/textView2"
+-                    android:layout_width="wrap_content"
+-                    android:layout_height="wrap_content"
+-                    android:layout_marginStart="16dp"
+-                    android:layout_marginTop="32dp"
+-                    android:text="MUSICAS POPULARES"
+-                    android:textSize="18sp"
+-                    app:layout_constraintStart_toStartOf="parent"
+-                    app:layout_constraintTop_toBottomOf="@+id/constraintLayout" />
++            <TextView
++                android:id="@+id/textView2"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginStart="16dp"
++                android:layout_marginTop="32dp"
++                android:text="MUSICAS POPULARES"
++                android:textSize="18sp"
++                app:layout_constraintStart_toStartOf="parent"
++                app:layout_constraintTop_toBottomOf="@+id/constraintLayout" />
+ 
+-                <ImageView
+-                    android:id="@+id/imageView2"
+-                    android:layout_width="wrap_content"
+-                    android:layout_height="wrap_content"
+-                    android:layout_marginStart="32dp"
+-                    android:layout_marginTop="32dp"
+-                    app:layout_constraintStart_toEndOf="@+id/textView2"
+-                    app:layout_constraintTop_toBottomOf="@+id/constraintLayout"
+-                    app:srcCompat="@drawable/ic_whatshot_black_18dp" />
++            <ImageView
++                android:id="@+id/imageView2"
++                android:layout_width="wrap_content"
++                android:layout_height="wrap_content"
++                android:layout_marginStart="32dp"
++                android:layout_marginTop="32dp"
++                app:layout_constraintStart_toEndOf="@+id/textView2"
++                app:layout_constraintTop_toBottomOf="@+id/constraintLayout"
++                app:srcCompat="@drawable/ic_whatshot_black_18dp" />
+ 
+-                <android.support.v7.widget.RecyclerView
+-                    android:id="@+id/artistList"
+-                    android:layout_width="389dp"
+-                    android:layout_height="248dp"
+-                    android:layout_marginBottom="8dp"
+-                    android:layout_marginEnd="8dp"
+-                    android:layout_marginStart="8dp"
+-                    android:layout_marginTop="32dp"
+-                    app:layout_constraintBottom_toBottomOf="parent"
+-                    app:layout_constraintEnd_toEndOf="parent"
+-                    app:layout_constraintStart_toStartOf="parent"
+-                    app:layout_constraintTop_toBottomOf="@+id/textView2"
+-                    app:layout_constraintVertical_bias="0.0" />
++            <android.support.v7.widget.RecyclerView
++                android:id="@+id/artistList"
++                android:layout_width="389dp"
++                android:layout_height="248dp"
++                android:layout_marginBottom="8dp"
++                android:layout_marginEnd="8dp"
++                android:layout_marginStart="8dp"
++                android:layout_marginTop="32dp"
++                app:layout_constraintBottom_toBottomOf="parent"
++                app:layout_constraintEnd_toEndOf="parent"
++                app:layout_constraintStart_toStartOf="parent"
++                app:layout_constraintTop_toBottomOf="@+id/textView2"
++                app:layout_constraintVertical_bias="0.0" />
+ 
+-            </android.support.constraint.ConstraintLayout>
++        </android.support.constraint.ConstraintLayout>
+ 
+     </android.support.v4.widget.NestedScrollView>
+ 
+Index: app/src/main/java/com/example/domingas/kiandamuzik/PricipalActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/domingas/kiandamuzik/PricipalActivity.java	(date 1517236364000)
++++ app/src/main/java/com/example/domingas/kiandamuzik/PricipalActivity.java	(revision )
+@@ -1,83 +1,138 @@
+ package com.example.domingas.kiandamuzik;
+ 
++import android.content.Context;
+ import android.content.Intent;
+-import android.support.annotation.Nullable;
+-import android.support.v7.app.AppCompatActivity;
+ import android.os.Bundle;
++import android.support.v4.widget.NestedScrollView;
+ import android.support.v7.widget.LinearLayoutManager;
+ import android.support.v7.widget.RecyclerView;
++import android.util.Log;
+ import android.view.Menu;
+ import android.view.MenuItem;
++import android.view.View;
++import android.widget.ImageView;
++import android.widget.ProgressBar;
++import android.widget.TextView;
++
++import com.squareup.picasso.Picasso;
+ 
+ import java.util.ArrayList;
++import java.util.List;
+ 
+-import adapters.ArtistTrackAdapter;
++import adapters.PopularTrackConstants;
+ import adapters.PopularTracksAdapter;
+-import models.Album;
+-import models.ArtistTrackList;
+-import models.Artista;
+-import models.PopularTrackList;
+-import models.Track;
++import api.Client;
++import api.Models.PopularTracks;
++import api.Services;
++import retrofit2.Call;
++import retrofit2.Callback;
++import retrofit2.Response;
+ 
+ public class PricipalActivity extends Base2Activity {
+ 
+-    @Override
+-    protected void onCreate(Bundle savedInstanceState) {
+-        super.onCreate(savedInstanceState);
+-        setContentView(R.layout.activity_pricipal);
++      private static final String TAG = "PricipalActivity";
++
++        RecyclerView listaDeMusicaPopular;
++        ArrayList<PopularTracks> popularTracksList = new ArrayList<>();
++        LinearLayoutManager linearLayoutManager;
++        boolean popularLoaded = true;
++
++        Bundle songInfo;
++        ProgressBar mStatusProgress;
++        NestedScrollView nestedScrollView;
++        ImageView popularCover;
++
++        private TextView mPopularArtistNameTextView, mPopularTrackTextView;
++
++        @Override
++        protected void onCreate(Bundle savedInstanceState) {
++            super.onCreate(savedInstanceState);
++            setContentView(R.layout.activity_pricipal);
++            listaDeMusicaPopular = findViewById(R.id.listasDeMusicas);
++            linearLayoutManager = new LinearLayoutManager(this);
++            getPopularTracks();
+ 
+-        RecyclerView recyclerView = findViewById(R.id.artistList);
+-        Artista artist = new Artista();
+-        artist.setArtistCover(R.drawable.big_shaq_track);
+-        artist.setId(0);
+-        artist.setDescription("");
+-        artist.setMusicStyle("RNB");
+-        artist.setName("Big Shag");
++            mStatusProgress = findViewById(R.id.progressBar2);
++            nestedScrollView = findViewById(R.id.scroll);
++            popularCover = findViewById(R.id.capa);
++            mPopularArtistNameTextView = findViewById(R.id.artistName);
++            mPopularTrackTextView = findViewById(R.id.principleTrackTitle);
+ 
+-        Album bigOne = new Album(0,"Big One",artist.getId(),"20-11-16","500");
+-        Track track = new Track();
+-        track.setAlbum(bigOne);
+-        track.setArtist(artist);
+-        track.setTrackCover(R.drawable.big_shaq_track);
+-        //track.setTrackId(0);
++            // popularCover.setText(listMusic.get(0).getArtist().get(0).getName());
+ 
+-        /*Album bigOne1 = new Album(1,"Big One",artist.getId(),"20-11-16","500");
+-        Track track1 = new Track();
+-        track1.setAlbum(bigOne);
+-        track1.setArtist(artist);
+-        track1.setTrackCover(R.drawable.big_shaq_track);
+-        //track.setTrackId(0);
+ 
+-        Album bigOne3 = new Album(2,"Big One",artist.getId(),"20-11-16","500");
+-        Track track3= new Track();
+-        track3.setAlbum(bigOne);
+-        track3.setArtist(artist);
+-        track3.setTrackCover(R.drawable.big_shaq_track);
+-        //track.setTrackId(0);
+-*/
+-        ArrayList<Track> tracks = new ArrayList<>();
+-        tracks.add(track);
++            updateViews(false);
+ 
++            // new initNowPlayControls().execute(popularTracksList);
++        }
+ 
+-        PopularTrackList popularTrackList = new PopularTrackList(0, artist.getId(), tracks);
+-        popularTrackList.setPopularTracks(tracks);
+-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+-        PopularTracksAdapter tracksAdapter = new PopularTracksAdapter(this, popularTrackList);
+-        recyclerView.setHasFixedSize(true);
+-        recyclerView.setAdapter(tracksAdapter);
+-        new initNowPlayingControls().execute("");
+-    }
++        private void InitializeRecycleView() {
++
++            listaDeMusicaPopular.setLayoutManager(linearLayoutManager);
++            PopularTracksAdapter adapter = new PopularTracksAdapter(this, popularTracksList);
++            listaDeMusicaPopular.setAdapter(adapter);
++
++            Picasso.with(PricipalActivity.this)
++                    .load(popularTracksList.get(0).getTrackCoverArt()).resize(512,512).into(popularCover);
++
++            mPopularTrackTextView.setText(popularTracksList.get(0).getArtist().get(0).getName());
++            mPopularTrackTextView.setText(popularTracksList.get(0).getTrackTitle());
++        }
+ 
+-    @Override
+-    public boolean onCreateOptionsMenu(Menu menu) {
+-        getMenuInflater().inflate(R.menu.menu_principal, menu);
+-        return super.onCreateOptionsMenu(menu);
+-    }
++        @Override
++        public boolean onCreateOptionsMenu(Menu menu) {
++            getMenuInflater().inflate(R.menu.menu_principal, menu);
++            return super.onCreateOptionsMenu(menu);
++        }
+ 
+-    @Override
+-    public boolean onOptionsItemSelected(MenuItem item) {
+-        if(item.getItemId() == R.id.action_acerca){
+-            startActivity(new Intent(this, AboutActivity.class));
+-        }
+-        return super.onOptionsItemSelected(item);
+-    }   }
++        @Override
++        public boolean onOptionsItemSelected(MenuItem item) {
++            if (item.getItemId() == R.id.action_acerca){
++                startActivity(new Intent(this, AboutActivity.class));
++            }
++            return super.onOptionsItemSelected(item);
++        }
++
++        private void updateViews(boolean tracksLoaded)
++        {
++            if (!tracksLoaded)
++            {
++                mStatusProgress.setVisibility(View.VISIBLE);
++                nestedScrollView.setVisibility(View.GONE);
++            }
++            else
++            {
++                nestedScrollView.setVisibility(View.VISIBLE);
++                mStatusProgress.setVisibility(View.GONE);
++            }
++        }
++
++        public void getPopularTracks(){
++            final Client.PopularTracks popularTracks = Services.createService(Client.PopularTracks.class);
++            popularTracks.getTracks().enqueue(new Callback<ArrayList<PopularTracks>>() {
++                @Override
++                public void onResponse(Call<ArrayList<PopularTracks>> call, Response<ArrayList<PopularTracks>> response) {
++                    if (response.code() == 200)
++                    {
++                        popularTracksList = response.body();
++                        popularLoaded = true;
++
++                        updateViews(popularLoaded);
++                        Log.d(TAG, "onResponse: " +response.body().size());
++                        InitializeRecycleView();
++                        songInfo = new Bundle();
++                        songInfo.putParcelableArrayList("popular", popularTracksList);
++                        new initNowPlayControls().doInBackground(songInfo);
++                    }else{
++                        Log.e(TAG, "onResponse: code=> " +response.code() );
++
++                    }
++                }
++
++                @Override
++                public void onFailure(Call<ArrayList<PopularTracks>> call, Throwable t) {
++                    Log.e(TAG, "onFailure: Ocorreu um erro!");
++                }
++            });
++        }
++    }
+\ No newline at end of file
+Index: app/src/main/java/api/Services.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/api/Services.java	(date 1517236364000)
++++ app/src/main/java/api/Services.java	(revision )
+@@ -12,13 +12,14 @@
+ 
+ 
+ public class Services {
+-    public static final String BASE_URL = "https://kianda-simple-tracks-api.herokuapp.com/";
++    private static String BASE_URL1 = "https://192.168.0.110:3000/";
++    private static String BASE_URL = "https://kianda-simple-tracks-api.herokuapp.com/";
+     private static Retrofit.Builder builder = new Retrofit.Builder()
+             .baseUrl(BASE_URL)
+             .addConverterFactory(GsonConverterFactory.create());
+     private static  final Retrofit retrofit = builder.build();
+ 
+-    public static <S> S createService(Class<S> service) {
+-        return retrofit.create(service);
++    public static  <S> S createService(Class<S> sClass){
++        return retrofit.create(sClass);
+     }
+ }
