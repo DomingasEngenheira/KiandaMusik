@@ -1,5 +1,6 @@
 package Fragments;
 
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -20,12 +21,13 @@ import static com.example.domingas.kiandamuzik.R.*;
  * Created by DOMINGAS on 04/01/2018.
  */
 
-public class NowPlayingCard extends Fragment {
+public class NowPlayingCard extends Fragment implements MediaPlayer.OnPreparedListener {
     ImageView albumArt;
     TextView song_title;
     TextView artist_title;
     PlayPauseButton play_pause;
     ProgressBar song_progess;
+    MediaPlayer mediaPlayer;
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -37,8 +39,15 @@ public class NowPlayingCard extends Fragment {
         play_pause = v.findViewById(R.id.controls_play_pause);
         song_progess = v.findViewById(R.id.controls_song_t);
 
+
+mediaPlayer = new MediaPlayer();
+
         return v;
 
     }
 
+    @Override
+    public void onPrepared(MediaPlayer mediaPlayer) {
+
+    }
 }

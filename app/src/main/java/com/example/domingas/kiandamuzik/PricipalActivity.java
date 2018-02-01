@@ -63,7 +63,7 @@ public class PricipalActivity extends Base2Activity {
 
             updateViews(false);
 
-            // new initNowPlayControls().execute(popularTracksList);
+
         }
 
         private void InitializeRecycleView() {
@@ -122,7 +122,8 @@ public class PricipalActivity extends Base2Activity {
                         InitializeRecycleView();
                         songInfo = new Bundle();
                         songInfo.putParcelableArrayList("popular", popularTracksList);
-                        new initNowPlayControls().doInBackground(songInfo);
+
+                        new initializeControls().doInBackground(songInfo);
                     }else{
                         Log.e(TAG, "onResponse: code=> " +response.code() );
 
